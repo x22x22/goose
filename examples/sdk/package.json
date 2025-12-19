@@ -5,8 +5,7 @@
   "main": "dist/goose-sdk.js",
   "types": "dist/goose-sdk.d.ts",
   "scripts": {
-    "build": "tsc",
-    "example": "node -r ts-node/register goose-sdk.ts"
+    "build": "tsc"
   },
   "keywords": [
     "goose",

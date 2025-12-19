@@ -95,12 +95,27 @@ export class GooseClient {
   /**
    * Get default headers with authentication.
    */
-  private getHeaders(additionalHeaders?: Record<string, string>): Record<string, string> {
-    return {
+  private getHeaders(additionalHeaders?: HeadersInit): Record<string, string> {
+    const headers: Record<string, string> = {
       'X-Secret-Key': this.secretKey,
       'Content-Type': 'application/json',
-      ...additionalHeaders,
     };
+    
+    if (additionalHeaders) {
+      if (additionalHeaders instanceof Headers) {
+        additionalHeaders.forEach((value, key) => {
+          headers[key] = value;
+        });
+      } else if (Array.isArray(additionalHeaders)) {
+        additionalHeaders.forEach(([key, value]) => {
+          headers[key] = value;
+        });
+      } else {
+        Object.assign(headers, additionalHeaders);
+      }
+    }
+    
+    return headers;
   }
 
   /**
@@ -112,7 +127,7 @@ export class GooseClient {
     options?: RequestInit
   ): Promise<T> {
     const url = `${this.baseUrl}${path}`;
-    const headers = this.getHeaders(options?.headers as Record<string, string>);
+    const headers = this.getHeaders(options?.headers);
 
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), this.timeout);

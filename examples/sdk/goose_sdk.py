@@ -20,7 +20,7 @@ import asyncio
 import json
 from dataclasses import dataclass
 from datetime import datetime
-from typing import AsyncIterator, Dict, Any, List, Optional
+from typing import AsyncIterator, Dict, Any, List, Optional, Union, Tuple
 import httpx
 
 
@@ -79,6 +79,9 @@ class GooseClient:
         secret_key: Authentication secret key (default: "test")
         timeout: Request timeout in seconds (default: 60.0)
     """
+    
+    # Default timeout for streaming operations
+    STREAMING_TIMEOUT = 300.0
     
     def __init__(
         self,
@@ -238,7 +241,7 @@ class GooseClient:
             f"{self.base_url}/reply",
             json=payload,
             headers=headers,
-            timeout=300.0  # Longer timeout for streaming
+            timeout=self.STREAMING_TIMEOUT
         ) as stream:
             async for line in stream.aiter_lines():
                 if not line:

@@ -97,6 +97,26 @@ export GOOSE_SERVER__SECRET_KEY="your-secret-key"
 
 For development, the default is `"test"`.
 
+## Quick Test
+
+To verify the SDK is working with your goose server:
+
+```bash
+# Install Python dependencies
+pip install httpx
+
+# Run the test script
+python3 test_sdk.py
+```
+
+The test script will check:
+- Server connectivity
+- Available providers
+- Available extensions
+- Existing sessions
+
+If the test passes, you're ready to integrate goose into your application!
+
 ## Common Use Cases
 
 ### 1. Basic Chat Session
