@@ -1,0 +1,2 @@
+# Python SDK dependencies for goose integration
+httpx>=0.25.0

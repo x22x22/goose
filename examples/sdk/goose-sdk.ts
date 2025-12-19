@@ -384,7 +384,7 @@ export class GooseClient {
 }
 
 // Example usage
-async function example() {
+export async function example() {
   const client = new GooseClient();
 
   // Check status
@@ -417,9 +417,4 @@ async function example() {
       console.log('\nConversation finished');
     }
   }
-}
-
-// Run example if this file is executed directly
-if (require.main === module) {
-  example().catch(console.error);
 }
