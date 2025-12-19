@@ -125,6 +125,41 @@ fn extract_type_from_schema(schema: &Value) -> Option<String> {
 
     // type field (string or array)
     match schema.get("type") {
+        Some(Value::String(s)) if s == "array" => {
+            let item_type = schema
+                .get("items")
+                .and_then(extract_type_from_schema)
+                .unwrap_or_else(|| "any".to_string());
+            Some(if item_type == "any" {
+                "array".into()
+            } else {
+                format!("{item_type}[]")
+            })
+        }
+        Some(Value::String(s)) if s == "object" => {
+            let Some(props) = schema.get("properties").and_then(|p| p.as_object()) else {
+                return Some("object".to_string());
+            };
+            let required: Vec<_> = schema
+                .get("required")
+                .and_then(|r| r.as_array())
+                .map(|arr| arr.iter().filter_map(|v| v.as_str()).collect())
+                .unwrap_or_default();
+            let mut fields: Vec<_> = props
+                .iter()
+                .map(|(name, schema)| {
+                    let ty = extract_type_from_schema(schema).unwrap_or_else(|| "any".into());
+                    let opt = if required.contains(&name.as_str()) {
+                        ""
+                    } else {
+                        "?"
+                    };
+                    format!("{name}{opt}: {ty}")
+                })
+                .collect();
+            fields.sort();
+            Some(format!("{{ {} }}", fields.join(", ")))
+        }
         Some(Value::String(s)) => Some(s.clone()),
         Some(Value::Array(arr)) => {
             let non_null: Vec<_> = arr
@@ -1021,18 +1056,18 @@ mod tests {
         "no params, no output schema"
     )]
     #[test_case(
-        "filesystem__read_file",
-        serde_json::json!({"type": "object", "properties": {"path": {"type": "string"}}, "required": ["path"]}),
-        Some(serde_json::json!({"type": "object"})),
-        "read_file({ path: string }): object - Read the complete contents of a file";
-        "string param, object output"
+        "filesystem__read_text_file",
+        serde_json::json!({"type": "object", "properties": {"path": {"type": "string"}, "tail": {"type": "number"}, "head": {"type": "number"}}, "required": ["path"]}),
+        Some(serde_json::json!({"type": "object", "properties": {"content": {"type": "string"}}, "required": ["content"]})),
+        "read_text_file({ head?: number, path: string, tail?: number }): { content: string } - Read the complete contents of a file";
+        "optional number params, object output"
     )]
     #[test_case(
         "memory__create_entities",
-        serde_json::json!({"type": "object", "properties": {"entities": {"type": "array"}}, "required": ["entities"]}),
-        Some(serde_json::json!({"type": "object"})),
-        "create_entities({ entities: array }): object - Create multiple new entities";
-        "array param, object output"
+        serde_json::json!({"type": "object", "properties": {"entities": {"type": "array", "items": {"type": "object", "properties": {"name": {"type": "string"}, "entityType": {"type": "string"}, "observations": {"type": "array", "items": {"type": "string"}}}, "required": ["name", "entityType", "observations"]}}}, "required": ["entities"]}),
+        Some(serde_json::json!({"type": "object", "properties": {"entities": {"type": "array", "items": {"type": "object", "properties": {"name": {"type": "string"}, "entityType": {"type": "string"}, "observations": {"type": "array", "items": {"type": "string"}}}, "required": ["name", "entityType", "observations"]}}}, "required": ["entities"]})),
+        "create_entities({ entities: { entityType: string, name: string, observations: string[] }[] }): { entities: { entityType: string, name: string, observations: string[] }[] } - Create multiple new entities";
+        "nested object array with typed props"
     )]
     #[test_case(
         "github__dismiss_notification",
@@ -1080,5 +1115,23 @@ mod tests {
         };
         let info = ToolInfo::from_mcp_tool(&tool).unwrap();
         assert_eq!(info.to_signature(), expected);
+    }
+
+    #[test_case(serde_json::json!({"type": "string"}), "string"; "string")]
+    #[test_case(serde_json::json!({"type": "number"}), "number"; "number")]
+    #[test_case(serde_json::json!({"type": "boolean"}), "boolean"; "boolean")]
+    #[test_case(serde_json::json!({"type": "array"}), "array"; "array bare")]
+    #[test_case(serde_json::json!({"type": "array", "items": {"type": "string"}}), "string[]"; "array with items")]
+    #[test_case(serde_json::json!({"type": "object"}), "object"; "object bare")]
+    #[test_case(serde_json::json!({"type": "object", "properties": {"a": {"type": "string"}}, "required": ["a"]}), "{ a: string }"; "object with prop")]
+    #[test_case(serde_json::json!({"type": "object", "properties": {"a": {"type": "string"}}}), "{ a?: string }"; "object optional prop")]
+    #[test_case(serde_json::json!({"type": "object", "properties": {"a": {"type": "array", "items": {"type": "string"}}}, "required": ["a"]}), "{ a: string[] }"; "object with array prop")]
+    #[test_case(serde_json::json!({"enum": ["a", "b"]}), "\"a\" | \"b\""; "enum array")]
+    #[test_case(serde_json::json!({"oneOf": [{"const": "x"}, {"const": "y"}]}), "\"x\" | \"y\""; "oneOf const")]
+    fn test_extract_type_from_schema(schema: serde_json::Value, expected: &str) {
+        assert_eq!(
+            extract_type_from_schema(&schema),
+            Some(expected.to_string())
+        );
     }
 }
