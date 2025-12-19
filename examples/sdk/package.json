@@ -1,0 +1,22 @@
+{
+  "name": "goose-sdk-examples",
+  "version": "1.0.0",
+  "description": "SDK examples for integrating goose AI agent",
+  "main": "dist/goose-sdk.js",
+  "types": "dist/goose-sdk.d.ts",
+  "scripts": {
+    "build": "tsc"
+  },
+  "keywords": [
+    "goose",
+    "ai",
+    "agent",
+    "sdk",
+    "integration"
+  ],
+  "author": "Block",
+  "license": "Apache-2.0",
+  "devDependencies": {
+    "typescript": "^5.0.0"
+  }
+}

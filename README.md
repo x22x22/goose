@@ -30,6 +30,8 @@ Designed for maximum flexibility, goose works with any LLM and supports multi-mo
 - [Installation](https://block.github.io/goose/docs/getting-started/installation)
 - [Tutorials](https://block.github.io/goose/docs/category/tutorials)
 - [Documentation](https://block.github.io/goose/docs/category/getting-started)
+- [Integration & API Guide](https://github.com/block/goose/blob/main/documentation/docs/guides/integration-api.md) - Integrate goose into your applications
+- [SDK Examples](https://github.com/block/goose/tree/main/examples/sdk) - Python, TypeScript, and more
 - [Responsible AI-Assisted Coding Guide](https://github.com/block/goose/blob/main/HOWTOAI.md)
 - [Governance](https://github.com/block/goose/blob/main/GOVERNANCE.md)
 
